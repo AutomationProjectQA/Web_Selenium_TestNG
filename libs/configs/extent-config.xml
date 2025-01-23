@@ -1,0 +1,382 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extentreports>
+	<configuration>
+		<!-- document encoding -->
+		<encoding>UTF-8</encoding>
+
+		<!-- title of the document -->
+		<documentTitle>Automation Result</documentTitle>
+
+		<!-- report name - displayed at top-nav -->
+		<reportName>Automation Report - WebPOM - </reportName>
+
+		<!-- report headline - displayed at top-nav, after reportHeadline -->
+		<reportHeadline>Script Execution</reportHeadline>
+
+		<!-- custom javascript -->
+		<scripts>
+			<![CDATA[
+const applyFilters = () => {
+    let selectedFilters = Array.from(document.querySelectorAll('span.demo:not(.outline)'));
+    let filtersArray = [];
+    selectedFilters.forEach(filter => filtersArray.push(filter.getAttribute('title')));
+    let resultTableTrChildrens = Array.from(document.querySelectorAll('div#test-details-wrapper table.table-results tr td[title]'));
+    resultTableTrChildrens.forEach(resultTableTrChildren => resultTableTrChildren.parentNode.style.display = (!filtersArray.length || filtersArray.includes(resultTableTrChildren.getAttribute('title'))) ? 'table-row' : 'none')
+}
+const resetFilterStyles = () => {
+    let selectedFilters = Array.from(document.querySelectorAll('span.demo:not(.outline)'));
+    selectedFilters.forEach(selectedFilter => {
+        selectedFilter.classList.toggle('outline');
+        selectedFilter.children[0].classList.toggle('text-white')
+    })
+}
+const updateFiltersOnClick = (target) => {
+    if (target.getAttribute('title') == "clear filters") {
+        resetFilterStyles()
+    } else {
+        target.classList.toggle('outline');
+        target.children[0].classList.toggle('text-white')
+    }
+}
+
+window.onload = () => {
+    let filterResultsDiv = document.createElement('div');
+    filterResultsDiv.innerHTML = '<div class="fixed-action-btn" id="floatingButton"><a class="btn-floating blue"><i class="large mdi-action-subject icon"></i></a><ul>' + '<li><span class="label info outline demo" title="info"><i class="mdi-action-info-outline"></i></span></li>' + '<li><span class="label pass outline demo" title="pass"><i class="mdi-action-check-circle"></i></span></li>' + '<li><span class="label warning outline demo" title="warning"><i class="mdi-alert-warning"></i></span></li>' + '<li><span class="label fail outline demo" title="fail"><i class="mdi-navigation-cancel"></i></span></li>' + '<li><span class="label error outline demo" title="error"><i class="mdi-alert-error"></i></span></li>' + '<li><span class="label capitalize unknown outline demo" title="clear filters"><i class="mdi-navigation-close"></i></li>';
+    '</ul></div>';
+    let cardPanelDiv = document.querySelector('#test-details-wrapper div.card-panel');
+    cardPanelDiv.insertBefore(filterResultsDiv, cardPanelDiv.childNodes[0]);
+    let floatingButtonDiv = document.querySelector('div#floatingButton');
+    floatingButtonDiv.style.bottom = "30px";
+    floatingButtonDiv.style.right = "50px";
+    let floatingButtonUl = document.querySelector('div#floatingButton ul');
+    floatingButtonUl.style.bottom = "44px";
+    let spans = Array.from(document.querySelectorAll('span.demo'));
+    spans.forEach(span => {
+        span.style.cursor = 'pointer';
+        span.style.fontSize = '1.125em';
+        span.addEventListener('click', (e) => {
+            let currentTarget = (e.target.classList.contains('demo')) ? e.target : e.target.parentElement;
+            updateFiltersOnClick(currentTarget);
+            applyFilters()
+        })
+    });
+    let collectionItems = Array.from(document.querySelectorAll('.collection-item'));
+    collectionItems.forEach(collectionItem => collectionItem.addEventListener('click', resetFilterStyles));
+
+    //Shows only last occurrence of test with testFilter. testFilter can be error, fail, warning, ...
+    const filterTests = testFilter => {
+
+        //getting all fail test names
+        let allTests = Array.from(document.querySelectorAll(`ul#test-collection li span.test-name`));
+        let testsToShow = {};
+        //looping through all tests
+        allTests.forEach(test => {
+            // getting test name
+            let testName = test.innerText.split('- ReRun')[0].trim();
+            // getting the test element
+            let testLi = test.parentElement.parentElement;
+            // filtering tests which fails till last rerun
+            if (testLi.classList.contains(testFilter)) {
+                testsToShow[testName] = testLi;
+            } else {
+                delete testsToShow[testName];
+            }
+            //hiding all tests
+            testLi.classList.remove('displayed');
+            testLi.classList.add('hide');
+        });
+        //showing only filtered tests
+        for (test in testsToShow) {
+            testsToShow[test].classList.add('displayed');
+            testsToShow[test].classList.remove('hide');
+        }
+        //opening first filtered test case
+        let displayedTests = Array.from(document.querySelectorAll(`li.${testFilter}.displayed`));
+        if (displayedTests.length) displayedTests[0].click();
+
+    }
+
+    //getting the last number of rerun
+    let rerunNumber = Number(Array.from(document.querySelectorAll('span.test-name')).pop().innerText.split(' ').pop());
+    //showing last rerun failures only when rerun is present else showing normal failures
+    if (rerunNumber) {
+
+        ['fail', 'warning', 'error'].forEach(testFilter => {
+
+            //getting the testFilter element
+            let failTestFilter = document.querySelector(`ul#tests-toggle li.${testFilter}`);
+            if (failTestFilter) {
+                //removing class attribute to stop the extent.js logic
+                failTestFilter.removeAttribute('class');
+                //showing only filtered tests
+                failTestFilter.addEventListener('click', () => {
+                    filterTests(testFilter)
+                });
+            }
+
+        });
+    }
+
+
+    // make variable change to enable displaye filter at start  
+    let applyFailWarnFilter = true
+    if (applyFailWarnFilter) {
+
+        // select fail and warn scenarios
+        let failTests = Array.from(document.querySelectorAll('li.collection-item.test.fail'));
+        let warnTests = Array.from(document.querySelectorAll('li.collection-item.test.warning'));
+        if (failTests.length > 0) {
+            // select failed scenarios from filter
+            document.querySelectorAll("ul#tests-toggle li.fail")[0].click();
+
+            // select warning scenarios if available
+            if (warnTests.length > 0) {
+                // make warning active in filter
+                document.querySelectorAll("ul#tests-toggle li.warning")[0].setAttribute('class', 'warning active');
+                // display warning scenarios
+                warnTests.forEach(test => {
+                    // getting class name
+                    let testClassName = test.getAttribute('class');
+                    console.log("before:" + testClassName);
+                    // update class to get displayed
+                    testClassName = testClassName.replace('hide', 'displayed');
+                    console.log("after:" + testClassName);
+                    // setting class name
+                    test.setAttribute('class', testClassName);
+                });
+
+            }
+        } else if (warnTests.length > 0) {
+            // select failed scenarios from filter
+            document.querySelectorAll("ul#tests-toggle li.warning")[0].click();
+        }        
+       
+        
+    } // end of filter at start script
+
+    // filtering the fail steps on opening failed test cases
+    Array.from(document.querySelectorAll('li.collection-item.test.fail')).forEach(scenario => scenario.addEventListener('click', () => {
+        document.querySelector('span.label.fail.demo').click()
+    }))
+    
+	// clicking first filtered scenario
+	document.querySelector("li.collection-item.displayed").click();
+
+} // end of on load
+
+const conditionsForButton = (getAllTable, element) => {
+
+	var getTable;
+	
+	if(getAllTable.length == 2){
+  		getTable = element.querySelector('.desc-table:nth-of-type(2)');
+  	}else if(getAllTable.length == 3){
+  		getTable = element.querySelector('.desc-table:nth-of-type(3)');
+  	}else{
+  		getTable = element.querySelector('.desc-table:nth-of-type(1)');
+  	}
+  	
+  	return getTable;
+}  
+
+const countMoreThanFive = (lenghtOfTrTag, getTrTag) => {
+
+	if(lenghtOfTrTag > 5){
+		for(var iterator=1; iterator<=lenghtOfTrTag; iterator++){
+			if(iterator > 5){  
+  				getTrTag[iterator].style.display='none';
+			}
+		}
+	}
+	
+}
+  
+const onLoadFiveSteps = () => {
+
+	var detailsContainerClass = document.querySelector('.details-container');
+
+	var testDesc = detailsContainerClass.querySelector('.test-desc');
+
+	var getAllTable = testDesc.querySelectorAll('.desc-table');
+  	
+  	var getTable = conditionsForButton(getAllTable, testDesc);
+
+  	var getScenarioCountTag = testDesc.querySelector('#stepsCount');
+  	
+	var totalCount = getScenarioCountTag.querySelector('span').id;
+	
+	var lenghtOfTrTag = parseInt(totalCount);
+	
+	var getTrTag = getTable.getElementsByTagName('tr');
+	
+	countMoreThanFive(lenghtOfTrTag, getTrTag);
+}
+
+ 
+const onClickFiveSteps = (event) => {
+ 	
+	var element = event.target.closest('li');
+  	
+  	var getAllTable = element.querySelectorAll('.desc-table');
+  	
+  	var getTable = conditionsForButton(getAllTable, element);
+
+  	var getScenarioCountTag = element.querySelector('#stepsCount');
+  	
+    var totalCount = getScenarioCountTag.querySelector('span').id;
+    
+    var lenghtOfTrTag = parseInt(totalCount);
+    
+    var getTrTag = getTable.getElementsByTagName('tr');
+ 	
+    countMoreThanFive(lenghtOfTrTag, getTrTag);
+    
+} 
+  
+var getAllTestCollections = document.querySelector('.test-collection');
+let getCollectionItem = (getAllTestCollections.querySelectorAll('li.collection-item'));
+for(i=0; i<getCollectionItem.length; i++){
+    getCollectionItem[i].addEventListener("click", onLoadFiveSteps);
+	getCollectionItem[i].addEventListener('click', onClickFiveSteps); 
+};
+
+
+
+clickReadButton = (button) => {
+  	var detailsContainerClass = document.querySelector('.details-container');
+  	
+  	var getAllTable = detailsContainerClass.querySelectorAll('.desc-table');
+  	
+  	var getTable = conditionsForButton(getAllTable, detailsContainerClass);	
+
+  	var getScnarioCountTag = detailsContainerClass.querySelector('#stepsCount');
+  	
+  	var totalCount = getScnarioCountTag.querySelector('span').id;
+  	
+  	var lenghtOfTrTag = parseInt(totalCount);
+  	
+  	var getTrTag;
+  
+  	for(var iterator=1; iterator <= lenghtOfTrTag; iterator++){
+    	getTrTag = getTable.getElementsByTagName('tr')[iterator];
+    	if(iterator>5 && getTrTag.style.display == ""){
+        	getTrTag.style.display = "none";
+    	}
+    	else{
+        	getTrTag.style.display = "";
+    	}
+  	}
+  	
+  	if(lenghtOfTrTag > 5 && getTrTag.style.display == ""){
+    	button.innerHTML = "Read Less";
+  	}else{
+    	button.innerHTML = "Read More";
+  	}
+}
+
+]]>
+		</scripts>
+
+		<!-- custom styles -->
+		<!-- custom styles -->
+		<styles>
+			<![CDATA[
+                /* To show multiple spaces in html between words */
+                .step-details{
+                	white-space: pre-wrap;
+                }
+                
+.desc-table {
+    border-collapse: collapse;
+    margin: 10px 0;
+    font-size: 0.9em;
+    font-family: sans-serif;
+    min-width: 400px;
+}
+
+.desc-table th,
+.desc-table td {
+    padding: 3px;
+}
+.desc-table tbody tr {
+    border-bottom: 1px solid #dddddd;
+}
+
+.desc-table tbody tr:nth-of-type(even) {
+    background-color: #f3f3f3;
+}
+
+.desc-table tbody tr:last-of-type {
+    border-bottom: 2px solid #cacaca;
+}
+
+.no{
+    width: 6ch;
+    text-align: center;
+}
+.steps{
+    min-width: 200px;
+}
+.header th
+{
+    background-color: #0a6ec4;
+    color: #ffffff !important;
+    text-align: left;
+    font-size: small;
+    font-weight: bold;
+}
+.testDescription
+{
+    padding-left: 1.5ch !important;
+}
+
+
+#btnReadMoreLessId {
+  	background-color: #f3f3f3;
+  	color: #0a6ec4;
+  	font-size: 14px;
+  	width: 100px;
+  	height: 25px;
+  	border: none;
+  	font-weight: bold;
+ 	display: inline;
+  	position: relative;
+  	top: 50%;
+  	left: 40%;
+  	transform: translate(-50%, -50%);
+  	margin: 10px 0px -4px 0px;
+}
+
+.test-attributes {
+  	float: left;
+  	margin-bottom: 10px;
+}
+
+#stepsCount {
+  	float: left;
+}
+
+.after-desc-table {
+  	display: inline-block;
+  	width: 100%;
+}
+
+.count{
+    display: flex;
+    margin-bottom: 1%;
+}
+
+.test-desc {
+    margin-bottom: 0px; 
+}
+
+.test-steps {
+  	margin-top: 0px;
+}
+
+html.with-featherlight{overflow:hidden}.featherlight{display:none;position:fixed;top:0;right:0;bottom:0;left:0;z-index:2147483647;text-align:center;white-space:nowrap;cursor:pointer;background:#333;background:rgba(0,0,0,0)}.featherlight:last-of-type{background:rgba(0,0,0,.8)}.featherlight:before{content:'';display:inline-block;height:100%;vertical-align:middle}.featherlight .featherlight-content{position:relative;text-align:left;vertical-align:middle;display:inline-block;overflow:auto;padding:25px 25px 0;border-bottom:25px solid transparent;margin-left:5%;margin-right:5%;max-height:95%;background:#fff;cursor:auto;white-space:normal}.featherlight .featherlight-inner{display:block}.featherlight link.featherlight-inner,.featherlight script.featherlight-inner,.featherlight style.featherlight-inner{display:none}.featherlight .featherlight-close-icon{position:absolute;z-index:9999;top:0;right:0;line-height:25px;width:25px;cursor:pointer;text-align:center;font-family:Arial,sans-serif;background:#fff;background:rgba(255,255,255,.3);color:#000;border:0;padding:0}.featherlight .featherlight-close-icon::-moz-focus-inner{border:0;padding:0}.featherlight .featherlight-image{width:100%}.featherlight-iframe .featherlight-content{border-bottom:0;padding:0;-webkit-overflow-scrolling:touch}.featherlight iframe{border:0}.featherlight *{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box}@media only screen and (max-width:1024px){.featherlight .featherlight-content{margin-left:0;margin-right:0;max-height:98%;padding:10px 10px 0;border-bottom:10px solid transparent}}@media print{html.with-featherlight>*>:not(.featherlight){display:none}}
+
+            ]]>
+		</styles>
+	</configuration>
+</extentreports>

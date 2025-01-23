@@ -1,0 +1,12 @@
+ConnMethod=tcp
+ConnTime=2022-03-25T06:23:57.979Z
+Host=192.168.10.79:55081
+Password=2e2dbf576eb06c9e
+RelativePtr=0
+Uuid=1ffd90b2-71bf-4510-8232-51738a3ca886
+WarnUnencrypted=FALSE
+SendKeyEvents=FALSE
+SendPointerEvents=FALSE
+SendSpecialKeys=FALSE
+DynamicResolution=TRUE
+Display=600x800

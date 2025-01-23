@@ -1,0 +1,10 @@
+<suite name="testng2" configfailurepolicy="continue"> 
+ <parameter name="browser" value="firefox" /> 
+ <parameter name="hub" value="http://localhost:4444/wd/hub" /> 
+ <parameter name="nodeDownloadFolder" value="\Users\meet\eclipse-workspace\WebPOM/Shared/Download//testng2" /> 
+ <test name="DemoModuleTest"> 
+  <classes> 
+   <class name="scenarios.modulesuite.DemoModule" /> 
+  </classes> 
+ </test>
+</suite>

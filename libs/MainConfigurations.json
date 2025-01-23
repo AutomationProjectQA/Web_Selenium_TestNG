@@ -1,0 +1,68 @@
+{
+  "docker": {
+    "setup": {
+      "start": "cmd.exe /c cd \" ./Execution/DockerCompose \" & start cmd.exe /k  \"\"C:\\Program Files\\Docker\\Docker\\Docker Desktop.exe\"",
+      "startWSL": "cmd.exe /c wsl sudo service docker start",
+      "info": "/usr/local/bin/docker info",
+      "version": "/usr/local/bin/docker --version",
+      "statusWSL": "service docker status"
+    },
+    "grid": {
+      "networkName": "Grid",
+      "network": "/usr/local/bin/docker network create %networkName%",
+      "statusApi": "http://localhost:4444/status",
+      "hub": "/usr/local/bin/docker run --name selenium-hub -p 4444:4444 --network %networkName% selenium/hub:4.15.0",
+      "node": "/usr/local/bin/docker run --name %fileName% --link selenium-hub:4.15.0 --network %networkName% -p %port%:5900 -v %downloadPath%:/home/seluser/Downloads -e SE_EVENT_BUS_SUBSCRIBE_PORT=4443  -e SE_EVENT_BUS_PUBLISH_PORT=4442  -e SE_EVENT_BUS_HOST=selenium-hub -e SE_SCREEN_HEIGHT=1080 -e SE_SCREEN_WIDTH=1920 -e SE_NODE_SESSION_TIMEOUT=600 selenium/node-firefox:4.15.0",
+      "parallelNode": "/usr/local/bin/docker run -d --platform linux/amd64 --name %fileName% --link selenium-hub:4.15.0 --network %networkName% -p %port%:5900 -v %downloadPath%:/home/seluser/Downloads -e SE_EVENT_BUS_SUBSCRIBE_PORT=4443  -e SE_EVENT_BUS_PUBLISH_PORT=4442  -e SE_EVENT_BUS_HOST=selenium-hub -e SE_SCREEN_HEIGHT=1080 -e SE_SCREEN_WIDTH=1920 -e SE_NODE_SESSION_TIMEOUT=600 -e SE_NODE_STEREOTYPE=\"{\\\"browserName\\\":\\\"firefox\\\",\\\"networkname:applicationName\\\":\\\"network_%fileName%\\\",\\\"nodename:applicationName\\\": \\\"node_%fileName%\\\"}\" selenium/node-firefox:4.15.0"
+    },
+    "teardown": {
+      "killTasks": "taskkill /f /im %taskName%",
+      "removeAllSetup": "/usr/local/bin/docker system prune --force",
+      "stopGivenContainer": "/usr/local/bin/docker stop %containerName%",
+      "deleteGivenContainer": "/usr/local/bin/docker rm %containerName%"
+    },
+    "execute": {
+      "commands": {
+        "executeXMLFile": "/opt/homebrew/bin/mvn test -Dfile=%filePath%",
+        "runDockerCommand": "cmd.exe /c cd \" %dockerFolderPath% \" & start cmd.exe /k  \" %command%  >> %logFilePath% ",
+        "runCommandWithoutLogs": "%command%"
+      },
+      "timeoutInSecond": {
+        "executionTimeout": "9000",
+        "executionVerificationFrequency": "10",
+        "sessionToStartTimeout": "60",
+        "timeoutToReadExpectedOutput": "150",
+        "timeoutToVerifyNodeAndSession": "180"
+      }
+    }
+  },
+  "path": {
+    "docker": {
+      "logsFolder": "./Generated/DockerLogs/",
+      "portListFile": "./Generated/portList.txt",
+      "runningContainersFile": "./Generated/runningContainerList.txt",
+      "failContainersFile": "./Generated/failContainerList.txt"
+    },
+    "vnc": {
+      "vncFiles": "./Generated/VNCs/",
+      "vncArrangePowershellFile": "/Execution/vnc/startVNC.ps1"
+    },
+    "shared": {
+      "configFile": "./Shared/config.properties",
+      "emailMap": "./Shared/%userType%/configEmailMap.json",
+      "downloadFolder": "/Shared/Download/"
+    },
+    "project": {
+      "generatedFolder": "./Generated",
+      "parallelLogsFolder": "./Generated/Automation_parallel_logs",
+      "executeXMLsFolder": "./Execution/execute",
+      "toEmailMap": "./Data/%userType%/configEmailMap.json",
+      "tempFolder": "C:/Windows/Temp",
+      "userTempFolder": "C:/Users/%user%/AppData/Local/Temp"
+    }
+  },
+  "projectConfig": {
+    "devEmailsForFailedCases": "vivek.m@meditab.com,ishitab@meditab.com",
+    "attachSheetInSummaryEmail": "true"
+  }
+}
